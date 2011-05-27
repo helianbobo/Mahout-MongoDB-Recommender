@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- ====================================================================== -->
+<!-- Ant build file (http://ant.apache.org/) for Ant 1.6.2 or above.        -->
+<!-- ====================================================================== -->
+
+<project name="Recommender" default="package" basedir=".">
+
+	
+	<!-- ====================================================================== -->
+	<!-- Build environment properties                                           -->
+	<!-- ====================================================================== -->
+	<property file="build.properties" />
+
+	<property name="project.sourceDir" value="src"/>
+	<property name="project.resourceDir" value="resources"/>
+	<property name="project.lib" value="lib"/>
+	<property name="project.conf" value="conf"/>
+	
+	<property name="build.finalName" value="${FINAL_NAME}"/>
+	<property name="build.dir" value="target"/>
+	<property name="build.outputDir" value="${build.dir}/classes"/>
+	
+	<property name="logs.dir" value="${build.dir}/${build.finalName}/WEB-INF/log"/>
+	
+	<property name="reporting.outputDirectory" value="${build.dir}/site"/>
+
+	
+	<!-- ====================================================================== -->
+	<!-- Defining classpaths                                                    -->
+	<!-- ====================================================================== -->
+
+	<path id="build.classpath">
+		<pathelement path="${project.lib}"/>
+    	<fileset dir="lib">
+      		<include name="**/*.jar"/>
+    	</fileset>
+	</path>
+
+
+	<!-- ====================================================================== -->
+	<!-- Cleaning up target                                                     -->
+	<!-- ====================================================================== -->
+
+	<target name="clean" description="Clean the output directory">
+		<delete dir="${build.dir}"/>
+	</target>
+
+
+	<!-- ====================================================================== -->
+	<!-- Compilation target                                                     -->
+	<!-- ====================================================================== -->
+
+	<target name="compile" description="Compile the code">
+		<mkdir dir="${build.outputDir}"/>
+	    <javac destdir="${build.outputDir}" 
+				nowarn="false" 
+				debug="true" 
+				optimize="false" 
+				deprecation="true" 
+				target="1.6" 
+				verbose="false" 
+				fork="false" 
+				source="1.6">
+			<src>
+				<pathelement location="${project.sourceDir}"/>
+			</src>
+	    	<exclude name="**/Test*.java"/>
+			<classpath refid="build.classpath"/>
+		</javac>
+	</target>
+
+
+	<!-- ====================================================================== -->
+	<!-- Javadoc target                                                         -->
+	<!-- ====================================================================== -->
+
+	<target name="javadoc" description="Generates the Javadoc of the application">
+		<javadoc sourcepath="${project.sourceDir}" 
+				packagenames="*" 
+				destdir="${reporting.outputDirectory}/apidocs" 
+				access="protected" 
+				old="false" 
+				verbose="false" 
+				version="true" 
+				use="true" 
+				author="true" 
+				splitindex="false" 
+				nodeprecated="false" 
+				nodeprecatedlist="false" 
+				notree="false" 
+				noindex="false" 
+				nohelp="false" 
+				nonavbar="false" 
+				serialwarn="false" 
+				charset="ISO-8859-1" 
+				linksource="false" 
+				breakiterator="false"/>
+	</target>
+
+
+	<!-- ====================================================================== -->
+	<!-- Package target                                                         -->
+	<!-- ====================================================================== -->
+
+	<!-- Generates needed files with the given properties and generates war package for the indexer service -->
+	<target name="package" depends="compile" description="Package the application">
+		<echo message="Se genera el servicio de recomendacion empaquetado ${build.finalName}.war"/>
+
+		<!-- Copies files needed to create the war file -->
+		<mkdir dir="${build.dir}/${build.finalName}/META-INF"/>
+		<copy todir="${build.dir}/${build.finalName}/WEB-INF" overwrite="true">
+			<fileset dir="${project.conf}"/>
+		</copy>
+		<copy todir="${build.dir}/${build.finalName}/WEB-INF/lib" overwrite="true">
+			<fileset dir="${project.lib}"/>
+		</copy>
+		<copy todir="${build.dir}/${build.finalName}/WEB-INF/classes" overwrite="true">
+			<fileset dir="${build.outputDir}"/>
+		</copy>
+		
+		<copy todir="${build.dir}/${build.finalName}/WEB-INF/conf">
+			<fileset dir="${project.resourceDir}"/>
+		</copy>
+		
+		<mkdir dir="${logs.dir}"/>
+		<touch file="${logs.dir}/Recommender.log"/>
+		<touch file="${logs.dir}/RecommenderError.log"/>
+		
+		<!-- Replaces properties in configuration files with the proper values -->
+		<replace file="${build.dir}/${build.finalName}/WEB-INF/conf/log4j.properties">
+			<replacefilter token="@logs.dir@" value="/webapps/Recommender/WEB-INF/log" />
+		</replace>
+		<!-- This files are deleted due to conflicts with Tomcat library -->
+		<delete file="${build.dir}/${build.finalName}/WEB-INF/lib/servlet-api.jar" />
+		<delete file="${build.dir}/${build.finalName}/WEB-INF/lib/geronimo-j2ee_1.4_spec-1.1.jar" />
+		
+		
+		<!-- Creates war -->
+		<war destfile="${build.dir}/${build.finalName}.war" 
+				compress="true">
+			<webinf dir="${build.dir}/${build.finalName}/WEB-INF"/>
+		</war>
+	</target>
+
+
+	<!-- ====================================================================== -->
+	<!-- Help target                                                            -->
+	<!-- ====================================================================== -->
+
+	<target name="help">
+		<echo message="Please run: $ant -projecthelp"/>
+	</target>
+	
+</project>
